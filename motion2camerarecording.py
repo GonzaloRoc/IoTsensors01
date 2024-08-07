@@ -81,35 +81,36 @@ def record_video():
 ###################################################################################################
 # runs the script in a loop until Control-C is pressed. 
 ###################################################################################################
-while True:
-    try:      
-        #if motion detected by the sensor
-        if GPIO.input(GPIO_PIN):
-            print(f"[{counter}], Motion detected! at ({datetime.now()})")
-            code = 1
-            #record the video and upload the video to the azure storage account
-            record_video() 
-            #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
-            time.sleep(TIMER_SLEEP)  # Sleep for a while before checking for motion again
+try:
+    while True:
+        try:      
+            #if motion detected by the sensor
+            if GPIO.input(GPIO_PIN):
+                print(f"[{counter}], Motion detected! at ({datetime.now()})")
+                code = 1
+                #record the video and upload the video to the azure storage account
+                record_video() 
+                #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
+                time.sleep(TIMER_SLEEP)  # Sleep for a while before checking for motion again
+            
+            #otherwise let it go till the next round
+            else:
+                print(f"[{counter}], No motion at ({datetime.now()})")
+                code = 0
+                #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
+                time.sleep(TIMER_SLEEP)
+            counter += 1
+             
+            except RuntimeError as error:
+                print(f"[ERROR]error ocurred: {error}")
+                time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
         
-        #otherwise let it go till the next round
-        else:
-            print(f"[{counter}], No motion at ({datetime.now()})")
-            code = 0
-            #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
-            time.sleep(TIMER_SLEEP)
-        counter += 1
-         
-        except RuntimeError as error:
-            print(f"[ERROR]error ocurred: {error}")
-            time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
-    
-        except Exception as error:
-            print(f"[ERROR] Exception occurred: {error}")
-            time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
+            except Exception as error:
+                print(f"[ERROR] Exception occurred: {error}")
+                time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
 
 except KeyboardInterrupt:
-    print("Control-C has been pressed: Exiting due to keyboard interrupt")
+        print("Control-C has been pressed: Exiting due to keyboard interrupt")
 
 finally:
     device_client.disconnect()
