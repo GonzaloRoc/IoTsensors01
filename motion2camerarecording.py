@@ -99,8 +99,8 @@ def record_video():
                 print(f"[ERROR] Exception occurred: {error}")
                 time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
 
-except KeyboardInterrupt:
-    print("Control-C has been pressed: Exiting due to keyboard interrupt")
+    except KeyboardInterrupt:
+        print("Control-C has been pressed: Exiting due to keyboard interrupt")
 
 finally:
     device_client.disconnect()
