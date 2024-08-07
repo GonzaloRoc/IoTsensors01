@@ -3,7 +3,7 @@ import picamera
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from datetime import datetime
 
-#####   General variables & initialization #######################################
+######################   General variables & initialization #######################################
 GPIO_PIN = 15
 CONNECTION_STRING = "HostName=iotHubSolarFarm.azure-devices.net;DeviceId=PIRsensor;SharedAccessKey=2gV0gwHeIFgI69HlEGh8Xg+A+3qahJ15KAIoTFDSHVk="
 LOCATION = "France"
@@ -13,11 +13,14 @@ TIMER_RECORDING = 10
 counter = 1
 pir_code = 0
 host_to_ping = "google.com"
-##################################################################################
 
 # Azure Blob Storage configuration
 connect_str = 'DefaultEndpointsProtocol=https;AccountName=streamingstorage01;AccountKey=xCzH8BpdUgYCw1TZRlTIt3lWEG+S2bkn9tEOuLE8SgQwJc+PulEgf7unavgEXNiTV6VIrm5+WS9X+AStQMTREQ==;EndpointSuffix=core.windows.net'
 container_name = 'recordings'
+
+
+###################################################################################################
+
 
 # Initialize PIR sensor
 print("")
@@ -43,6 +46,9 @@ print(f"- Checking internet access...............{result}")
 # Initialize the camera
 camera = picamera.PiCamera()
 
+###################################################################################################
+# This function uploads the video to the specified storage account
+###################################################################################################
 def upload_to_azure(file_path, blob_name):
     try:
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -54,11 +60,11 @@ def upload_to_azure(file_path, blob_name):
     except Exception as ex:
         print(f"[ERROR] An error occurred: {ex}")
 
-################################################################################
+###################################################################################################
 # This function records a video and uploads the recording to the Azure storage account
 # it records for TIME_RECORDING parameters
 # the name of the recording is based on the timestamp creation of the recording
-###############################################################################
+###################################################################################################
 def record_video():
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -72,35 +78,38 @@ def record_video():
         print("Recording stopped.")
         upload_to_azure(file_path, blob_name)
 
-    while True:
-        try:      
-            #if motion detected by the sensor
-            if GPIO.input(GPIO_PIN):
-                print(f"[{counter}], Motion detected! at ({datetime.now()})")
-                code = 1
-                #record the video and upload the video to the azure storage account
-                record_video() 
-                #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
-                time.sleep(TIMER_SLEEP)  # Sleep for a while before checking for motion again
-            
-            #otherwise let it go till the next round
-            else:
-                print(f"[{counter}], No motion at ({datetime.now()})")
-                code = 0
-                #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
-                time.sleep(TIMER_SLEEP)
-            counter += 1
-             
-            except RuntimeError as error:
-                print(f"[ERROR]error ocurred: {error}")
-                time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
+###################################################################################################
+# runs the script in a loop until Control-C is pressed. 
+###################################################################################################
+while True:
+    try:      
+        #if motion detected by the sensor
+        if GPIO.input(GPIO_PIN):
+            print(f"[{counter}], Motion detected! at ({datetime.now()})")
+            code = 1
+            #record the video and upload the video to the azure storage account
+            record_video() 
+            #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
+            time.sleep(TIMER_SLEEP)  # Sleep for a while before checking for motion again
         
-            except Exception as error:
-                print(f"[ERROR] Exception occurred: {error}")
-                time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
+        #otherwise let it go till the next round
+        else:
+            print(f"[{counter}], No motion at ({datetime.now()})")
+            code = 0
+            #send_telemetry_PIR(code,device_client,counter,LOCATION,device_id)
+            time.sleep(TIMER_SLEEP)
+        counter += 1
+         
+        except RuntimeError as error:
+            print(f"[ERROR]error ocurred: {error}")
+            time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
+    
+        except Exception as error:
+            print(f"[ERROR] Exception occurred: {error}")
+            time.sleep(TIMER_SLEEP_ERROR)  # Retry after seconds
 
-    except KeyboardInterrupt:
-        print("Control-C has been pressed: Exiting due to keyboard interrupt")
+except KeyboardInterrupt:
+    print("Control-C has been pressed: Exiting due to keyboard interrupt")
 
 finally:
     device_client.disconnect()
